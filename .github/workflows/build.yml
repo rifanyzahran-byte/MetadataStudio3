@@ -1,0 +1,53 @@
+name: Build Metadata Studio Indonesia Portable
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PyInstaller
+        run: python -m pip install pyinstaller
+      - name: Download FFmpeg and FFprobe
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force tools | Out-Null
+          Invoke-WebRequest 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip' -OutFile ffmpeg.zip
+          Expand-Archive ffmpeg.zip -DestinationPath ffmpeg-extracted
+          foreach ($name in @('ffmpeg.exe','ffprobe.exe')) {
+            $found = Get-ChildItem ffmpeg-extracted -Recurse -File -Filter $name | Select-Object -First 1
+            if (!$found) { throw "Missing $name" }
+            Copy-Item $found.FullName "tools/$name"
+          }
+          & ./tools/ffprobe.exe -version
+      - name: Build executable with bundled tools
+        shell: pwsh
+        run: |
+          python -m py_compile MetadataStudio.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name MetadataStudioIndonesia --add-binary 'tools/ffmpeg.exe;.' --add-binary 'tools/ffprobe.exe;.' MetadataStudio.py
+          if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed' }
+      - name: Verify bundled tools and executable
+        shell: pwsh
+        run: |
+          if (!(Test-Path dist/MetadataStudioIndonesia.exe)) { throw 'EXE missing' }
+          $proc = Start-Process -FilePath (Resolve-Path dist/MetadataStudioIndonesia.exe) -ArgumentList '--self-test' -Wait -PassThru
+          if ($proc.ExitCode -ne 0) { throw "Self-test failed: $($proc.ExitCode)" }
+      - name: Prepare portable package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release | Out-Null
+          Copy-Item dist/MetadataStudioIndonesia.exe release/
+          Copy-Item PANDUAN.txt release/
+          Compress-Archive -Path release/* -DestinationPath MetadataStudioIndonesiaPortable.zip -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MetadataStudio-Indonesia-Portable
+          path: MetadataStudioIndonesiaPortable.zip
+          if-no-files-found: error
