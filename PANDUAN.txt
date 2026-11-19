@@ -1,0 +1,10 @@
+METADATA STUDIO INDONESIA - BUILD DIPERBAIKI
+
+1. Unggah MetadataStudio.py dan PANDUAN.txt ke root repository GitHub.
+2. Unggah build.yml ke .github/workflows/build.yml (folder tersembunyi).
+3. Actions > Build Metadata Studio Indonesia Portable > Run workflow.
+4. Unduh artifact MetadataStudio-Indonesia-Portable, ekstrak ZIP, jalankan EXE.
+
+FFmpeg dan FFprobe dibundel. ExifTool adalah OPSIONAL dan TIDAK disertakan pada build ini untuk menghindari error download 404. Mode 'Ubah tag saja (ExifTool)' hanya berfungsi bila ExifTool terpasang dan ditemukan di folder EXE/PATH. Mode 'Bersihkan & perbarui' memakai FFmpeg dan berfungsi tanpa ExifTool.
+
+PENTING: Aplikasi dapat mengganti file asli secara permanen. Uji pada video yang tidak penting terlebih dahulu. Tidak ada jaminan metadata meningkatkan views YouTube.
